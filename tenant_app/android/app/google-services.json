@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "1096625634070",
+    "project_id": "kaushik-pg-admin",
+    "storage_bucket": "kaushik-pg-admin.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1096625634070:android:57c3409b040eb0ee15ee37",
+        "android_client_info": {
+          "package_name": "com.kaushikpg.kaushik_pg_admin"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAxYEhXrwlsryX54mHlGrfbjJ0lI8FR9Do"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1096625634070:android:eb72777e40996bc215ee37",
+        "android_client_info": {
+          "package_name": "com.kaushikpg.kaushik_pg_tenant"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAxYEhXrwlsryX54mHlGrfbjJ0lI8FR9Do"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,134 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function staffDoc() {
+      return get(/databases/$(database)/documents/staff/$(request.auth.uid)).data;
+    }
+
+    function isStaff() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/staff/$(request.auth.uid));
+    }
+
+    function isOwner() {
+      return isStaff() && staffDoc().role == 'owner';
+    }
+
+    function hasPgAccess(pgId) {
+      return isStaff() && pgId in staffDoc().assignedPgIds;
+    }
+
+    // True for the tenant a doc belongs to. `authUid` is stamped onto the
+    // tenant doc by the provisionTenantLogin Cloud Function (Admin SDK) when
+    // the owner generates that tenant's email/password login — never set by
+    // the client, so this can't be spoofed by writing your own authUid.
+    function isLinkedTenant(tenantData) {
+      return isSignedIn() && tenantData.authUid == request.auth.uid;
+    }
+
+    // /staff/{staffId} — a staff member can read their own record and
+    // update their own fcmTokens (for push registration); only owners can
+    // otherwise manage staff accounts and PG assignments.
+    match /staff/{staffId} {
+      allow read: if isSignedIn() && request.auth.uid == staffId;
+      allow update: if isSignedIn() && request.auth.uid == staffId
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['fcmTokens']);
+      allow read, write: if isOwner();
+    }
+
+    // /pgs/{pgId} — PG profile (incl. the static payment QR image URL).
+    // Owners manage; assigned staff read. A linked tenant may also fetch
+    // their own PG's doc by id (to show the QR code) but can't list PGs.
+    match /pgs/{pgId} {
+      allow get: if hasPgAccess(pgId) || isSignedIn();
+      allow list: if hasPgAccess(pgId);
+      allow write: if isOwner();
+    }
+
+    // /roomTypes/{roomTypeId} — reusable sharing/rent presets (e.g. "3
+    // sharing" at ₹6,000/bed). Scoped by pgId.
+    match /roomTypes/{roomTypeId} {
+      allow read, write: if hasPgAccess(resource.data.pgId);
+      allow create: if hasPgAccess(request.resource.data.pgId);
+    }
+
+    // /flats/{flatId} — a physical unit (e.g. "A-101", 1BHK) that groups
+    // multiple /rooms, each of which can be a different sharing type.
+    match /flats/{flatId} {
+      allow read, write: if hasPgAccess(resource.data.pgId);
+      allow create: if hasPgAccess(request.resource.data.pgId);
+    }
+
+    // /rooms/{roomId} — belongs to a flat; scoped by pgId.
+    match /rooms/{roomId} {
+      allow read, write: if hasPgAccess(resource.data.pgId);
+      allow create: if hasPgAccess(request.resource.data.pgId);
+    }
+
+    // /beds/{bedId} — the assignable unit within a room; `tenantId` links
+    // to the occupant, kept in sync by the admin app's changeTenantBed.
+    match /beds/{bedId} {
+      allow read, write: if hasPgAccess(resource.data.pgId);
+      allow create: if hasPgAccess(request.resource.data.pgId);
+    }
+
+    // /tenants/{tenantId} — scoped by pgId for staff. A tenant's own app
+    // finds its doc via `where('authUid', '==', <their uid>)` — that field
+    // is only ever set by provisionTenantLogin (Admin SDK), so the client
+    // only needs read access here, plus a narrow self-update for fcmToken.
+    match /tenants/{tenantId} {
+      allow get, list: if hasPgAccess(resource.data.pgId) || isLinkedTenant(resource.data);
+      // fcmToken is always self-updatable. Uploading documents requires a
+      // verified email (checked via the auth token's email_verified claim,
+      // set server-side by Firebase Auth — can't be spoofed by the client)
+      // and can only ever set verificationStatus to 'pending', never
+      // 'verified'/'rejected' — that stays staff-only via hasPgAccess.
+      allow update: if hasPgAccess(resource.data.pgId)
+        || (isLinkedTenant(resource.data)
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['fcmToken']))
+        || (isLinkedTenant(resource.data)
+            && request.auth.token.email_verified == true
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['documents', 'verificationStatus'])
+            && request.resource.data.verificationStatus == 'pending');
+      allow delete: if hasPgAccess(resource.data.pgId);
+      allow create: if hasPgAccess(request.resource.data.pgId);
+    }
+
+    // /payments/{paymentId} — scoped by pgId for staff; a linked tenant can
+    // read (not write) their own payment history.
+    match /payments/{paymentId} {
+      allow get, list: if hasPgAccess(resource.data.pgId)
+        || isLinkedTenant(get(/databases/$(database)/documents/tenants/$(resource.data.tenantId)).data);
+      allow update, delete: if hasPgAccess(resource.data.pgId);
+      allow create: if hasPgAccess(request.resource.data.pgId)
+        && request.resource.data.markedBy == request.auth.uid;
+    }
+
+    // /settings/{pgId} — due date & penalty config. Owners only can write.
+    match /settings/{pgId} {
+      allow read: if hasPgAccess(pgId);
+      allow write: if isOwner();
+    }
+
+    // /paymentClaims/{claimId} — a tenant submits a receipt after paying
+    // the PG's static QR; staff review and approve/reject (approval marks
+    // the underlying /payments doc paid via the admin app's existing
+    // markPaid flow). `tenantAuthUid` is denormalized onto the claim at
+    // creation so later reads don't need an extra lookup.
+    match /paymentClaims/{claimId} {
+      allow get, list: if hasPgAccess(resource.data.pgId) || resource.data.tenantAuthUid == request.auth.uid;
+      allow update: if hasPgAccess(resource.data.pgId);
+      allow create: if isSignedIn()
+        && request.resource.data.tenantAuthUid == request.auth.uid
+        && isLinkedTenant(get(/databases/$(database)/documents/tenants/$(request.resource.data.tenantId)).data)
+        && request.resource.data.pgId ==
+           get(/databases/$(database)/documents/tenants/$(request.resource.data.tenantId)).data.pgId;
+    }
+  }
+}

@@ -1,0 +1,119 @@
+PG Admin App — Full Plan
+
+Scope: Admin app for managing 5 PGs, ~5,000 tenants. Android + iOS. Rent tracking with configurable due date & penalty, tenant document vault, push notifications, cash-payment marking with tenant confirmation.
+
+1. Tech Stack (Final)
+Layer	Choice	Why
+Frontend (mobile)	Flutter (Dart)	Single codebase → native Android + iOS
+Backend	Firebase (Firestore, Auth, Cloud Functions, Cloud Storage, Cloud Messaging)	Free tier covers early scale, scales to 5,000 tenants cheaply, tight Flutter integration
+Database	Firestore (NoSQL)	Matches Firebase ecosystem; fine for this data shape (tenants, payments, PGs)
+File storage	Firebase Cloud Storage	Tenant ID docs, photos, receipts
+Push notifications	Firebase Cloud Messaging (FCM)	Free, unlimited, native on both platforms via Flutter
+Penalty/reminder automation	Cloud Functions (scheduled — Cloud Scheduler)	Runs daily to check due dates, apply penalty, trigger notifications
+Android distribution	Google Play ($25 one-time) or direct APK sideload (free)	Your call — Play Store recommended for staff convenience
+iOS distribution	Apple Developer Program ($99/year) + TestFlight	Required for real device install beyond 7-day personal builds
+Admin web access (optional)	Flutter Web (same codebase)	Lets you manage from a laptop too, no extra dev cost
+
+Estimated running cost: $10–40/month at full 5,000-tenant scale; likely $0 for first few hundred tenants (free tier).
+
+2. Architecture (High Level)
+┌─────────────────────┐     ┌─────────────────────┐
+│  Flutter App         │     │  Flutter App         │
+│  (Admin - Android)   │     │  (Admin - iOS)        │
+└──────────┬───────────┘     └──────────┬───────────┘
+           │                            │
+           └────────────┬───────────────┘
+                         │
+                 Firebase Auth
+              (Admin/Staff login)
+                         │
+        ┌────────────────┼────────────────┐
+        │                │                │
+   Firestore DB     Cloud Storage    Cloud Functions
+  (tenants, PGs,    (ID docs,        (penalty calc,
+   payments,         photos,          scheduled
+   rooms)            receipts)        reminders)
+        │                                │
+        └────────────────┬───────────────┘
+                          │
+                Firebase Cloud Messaging (FCM)
+                          │
+              ┌───────────┴────────────┐
+              │                        │
+      Tenant gets push          Admin gets push
+      (due reminder,             (staff action logs,
+       payment confirmed,         optional)
+       penalty started)
+
+Note: Tenants don't need the full admin app — they only need to receive push notifications. Options:
+
+A lightweight separate "Tenant" Flutter app (view-only: dues, payment history, notifications) — recommended if you want tenants to self-check status
+Or just SMS/WhatsApp-style push via a minimal tenant-facing PWA, cheaper to build first
+3. Data Model (Firestore Collections)
+/pgs/{pgId}
+  - name, address, totalRooms, staffIds[]
+
+/rooms/{roomId}
+  - pgId, roomNumber, capacity, occupiedBeds
+
+/tenants/{tenantId}
+  - name, mobile, email, photoUrl
+  - pgId, roomId, rentAmount, depositAmount
+  - joinDate, status (active/exited)
+  - documents: [{type, url, uploadedAt}]
+  - fcmToken (for push)
+
+/payments/{paymentId}
+  - tenantId, pgId, month, amountPaid, mode (cash/upi/bank)
+  - markedBy (adminId), markedAt, status (paid/pending/overdue)
+  - penaltyApplied
+
+/settings/{pgId}
+  - dueDate (default: 5)
+  - penaltyType (flat/percentage), penaltyValue
+  - reminderDaysBefore
+
+/staff/{staffId}
+  - name, role (owner/manager), assignedPgIds[]
+4. Phased Build Plan
+Phase 0 — Setup (Week 1)
+Firebase project setup, Flutter project scaffold
+Apple Developer + Google Play accounts (if going that route)
+Admin auth (email/password or phone OTP)
+Phase 1 — MVP (Weeks 2–4)
+Tenant CRUD: add/edit/view tenant with basic details
+PG & room setup, assign tenant to room
+Simple tenant list with search/filter
+Manual "Mark as Paid (Cash)" action → updates Firestore, sends push to tenant
+Basic admin dashboard (total tenants, paid vs pending this month)
+Phase 2 — Automation (Weeks 5–6)
+Configurable due date & penalty settings per PG
+Cloud Function scheduled job: daily check → apply penalty, send overdue reminders
+Push notification templates (due soon, due today, overdue, payment confirmed)
+Payment history / ledger per tenant
+Phase 3 — Documents & Polish (Weeks 7–8)
+Document upload/view (ID proof, agreement, photos) — 1–2 click access from tenant profile
+Exit/checkout flow with deposit settlement
+Admin activity log (who marked what paid)
+Reports: monthly collection, pending dues, occupancy
+Phase 4 — Scale & Distribute (Weeks 9–10)
+Staff roles/permissions (multi-PG access control)
+Performance pass for 5,000-tenant scale (pagination, indexed queries)
+TestFlight rollout (iOS), APK/Play Store rollout (Android)
+Tenant-facing lightweight app or PWA for self-service view
+5. Rough Timeline & Cost Summary
+Phase	Duration	Outcome
+0 – Setup	1 week	Project ready, accounts live
+1 – MVP	3 weeks	Usable app: add tenants, mark rent paid manually
+2 – Automation	2 weeks	Auto reminders + penalty logic live
+3 – Documents & Polish	2 weeks	Full document vault, reports, exit flow
+4 – Scale & Distribute	2 weeks	Ready for all 5,000 tenants, live on both stores
+
+Total: ~10 weeks part-time build, faster if full-time or with help.
+
+One-time costs: $25 (Play Store) + $99/year (Apple Developer) Monthly running cost: $0–40 depending on scale
+
+6. Next Step Options
+Start Phase 0 — scaffold the Flutter + Firebase project
+Design the admin screens (wireframes) before writing code
+Design the tenant-facing notification/self-view app separately

@@ -1,0 +1,55 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Both custom claims below are set by Cloud Functions (Admin SDK) —
+    // `staff` by onStaffWritten whenever a /staff doc is written, `tenantId`
+    // by provisionTenantLogin when the owner creates a tenant's login. They
+    // live in the ID token itself, so no cross-service Firestore lookup is
+    // needed here (that path proved unreliable for write rules).
+    function isStaff() {
+      return request.auth != null && request.auth.token.staff == true;
+    }
+
+    function isOwnTenant(tenantId) {
+      return request.auth != null && request.auth.token.tenantId == tenantId;
+    }
+
+    function isImageUnder10MB() {
+      return request.resource.size < 10 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+    }
+
+    function isDocUnder10MB() {
+      return request.resource.size < 10 * 1024 * 1024
+        && (request.resource.contentType.matches('image/.*') || request.resource.contentType == 'application/pdf');
+    }
+
+    // /tenant_docs/{pgId}/{tenantId}/{fileName} — ID proofs, agreements,
+    // photos. Staff can read/write any; a tenant can upload (not overwrite
+    // others') to their own folder once email-verified.
+    match /tenant_docs/{pgId}/{tenantId}/{fileName} {
+      allow read, write: if isStaff();
+      allow write: if isOwnTenant(tenantId)
+        && request.auth.token.email_verified == true
+        && isDocUnder10MB();
+    }
+
+    // /pg_qr/{pgId}/{fileName} — the PG's static UPI payment QR code image.
+    // Staff upload it; any signed-in user (incl. the tenant app) can view it.
+    match /pg_qr/{pgId}/{fileName} {
+      allow read: if request.auth != null;
+      allow write: if isStaff();
+    }
+
+    // /payment_claim_receipts/{pgId}/{tenantId}/{fileName} — screenshots a
+    // tenant uploads from their own app as proof of a QR payment. Any
+    // signed-in user can upload (the tenant app); only staff can read them
+    // back for review.
+    match /payment_claim_receipts/{pgId}/{tenantId}/{fileName} {
+      allow read: if isStaff();
+      allow write: if request.auth != null && isImageUnder10MB();
+    }
+  }
+}
