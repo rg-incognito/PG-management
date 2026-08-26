@@ -283,3 +283,46 @@ exports.onStaffWritten = onDocumentWritten("staff/{staffId}", async (event) => {
   if (!event.data.after.exists) return;
   await auth.setCustomUserClaims(event.params.staffId, { staff: true });
 });
+
+// Callable from the admin app. Lets an owner/manager manually push a rent
+// reminder right now to every active tenant in a PG who hasn't paid the
+// current month yet — on top of the automatic dailyDueCheck job. Purely a
+// notification: it doesn't touch payment records or apply penalties.
+exports.sendPendingReminders = onCall(async (request) => {
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "Sign in required.");
+  }
+  const pgId = request.data?.pgId;
+  if (!pgId) {
+    throw new HttpsError("invalid-argument", "pgId is required.");
+  }
+
+  const staffSnap = await db.collection("staff").doc(request.auth.uid).get();
+  const staff = staffSnap.exists ? staffSnap.data() : null;
+  if (!staff || !(staff.assignedPgIds || []).includes(pgId)) {
+    throw new HttpsError("permission-denied", "You don't have access to this PG.");
+  }
+
+  const month = currentMonthKey();
+  const tenantsSnap = await db
+    .collection("tenants")
+    .where("pgId", "==", pgId)
+    .where("status", "==", "active")
+    .get();
+
+  let notified = 0;
+  for (const tenantDoc of tenantsSnap.docs) {
+    const paymentSnap = await db.collection("payments").doc(`${tenantDoc.id}_${month}`).get();
+    if (paymentSnap.exists && paymentSnap.get("status") === "paid") continue;
+
+    await sendToTenant(
+      tenantDoc,
+      "Rent reminder",
+      `Your rent for ${month} is still pending. Please pay at your earliest convenience.`,
+      { type: "manual_reminder", month }
+    );
+    notified++;
+  }
+
+  return { notified, month };
+});

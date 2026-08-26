@@ -102,6 +102,13 @@ class DashboardScreen extends ConsumerWidget {
                   ],
                 ),
               ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: _NotifyPendingButton(pgId: activePg.id),
+                ),
+              ),
             ],
           );
         },
@@ -218,6 +225,62 @@ class _PendingVerificationsButton extends ConsumerWidget {
       ),
       label: const Text('Verification'),
       onPressed: () => context.push('/verification', extra: pgId),
+    );
+  }
+}
+
+class _NotifyPendingButton extends ConsumerStatefulWidget {
+  final String pgId;
+  const _NotifyPendingButton({required this.pgId});
+
+  @override
+  ConsumerState<_NotifyPendingButton> createState() => _NotifyPendingButtonState();
+}
+
+class _NotifyPendingButtonState extends ConsumerState<_NotifyPendingButton> {
+  bool _sending = false;
+
+  Future<void> _confirmAndSend() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Send rent reminder?'),
+        content: const Text(
+          "This pushes a reminder notification right now to every active tenant who hasn't paid this month yet.",
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
+          FilledButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Send')),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    setState(() => _sending = true);
+    try {
+      final count = await ref.read(functionsServiceProvider).sendPendingReminders(widget.pgId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(count == 0 ? 'Everyone has already paid this month.' : 'Notified $count tenant(s).')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to send: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton.icon(
+      icon: _sending
+          ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2))
+          : const Icon(Icons.notifications_active),
+      label: const Text('Notify pending tenants'),
+      onPressed: _sending ? null : _confirmAndSend,
     );
   }
 }

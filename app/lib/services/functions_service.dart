@@ -11,4 +11,12 @@ class FunctionsService {
     final data = Map<String, dynamic>.from(result.data as Map);
     return (email: data['email'] as String, password: data['password'] as String);
   }
+
+  /// Pushes a rent reminder right now to every active tenant in [pgId] who
+  /// hasn't paid the current month. Returns how many were notified.
+  Future<int> sendPendingReminders(String pgId) async {
+    final result = await _functions.httpsCallable('sendPendingReminders').call({'pgId': pgId});
+    final data = Map<String, dynamic>.from(result.data as Map);
+    return data['notified'] as int;
+  }
 }
