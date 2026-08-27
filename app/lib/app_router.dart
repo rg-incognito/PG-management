@@ -7,8 +7,10 @@ import 'package:go_router/go_router.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/broadcasts/broadcasts_screen.dart';
 import 'screens/dashboard/dashboard_screen.dart';
+import 'screens/pgs/pg_management_screen.dart';
 import 'screens/rooms/rooms_screen.dart';
 import 'screens/settings/pg_settings_screen.dart';
+import 'screens/staff/staff_management_screen.dart';
 import 'screens/tenants/payment_claims_screen.dart';
 import 'screens/tenants/tenant_form_screen.dart';
 import 'screens/tenants/tenant_list_screen.dart';
@@ -82,6 +84,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/broadcasts',
         builder: (_, state) => BroadcastsScreen(pgId: state.extra as String),
+      ),
+      GoRoute(
+        path: '/pgs',
+        builder: (_, _) => const PgManagementScreen(),
+      ),
+      GoRoute(
+        path: '/staff',
+        builder: (_, _) => const StaffManagementScreen(),
       ),
     ],
   );

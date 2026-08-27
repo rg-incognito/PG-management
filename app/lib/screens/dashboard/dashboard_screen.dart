@@ -23,6 +23,16 @@ class DashboardScreen extends ConsumerWidget {
         title: const Text('Kaushik PG — Dashboard'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.apartment),
+            tooltip: 'Manage PGs',
+            onPressed: () => context.push('/pgs'),
+          ),
+          IconButton(
+            icon: const Icon(Icons.people_alt),
+            tooltip: 'Staff',
+            onPressed: () => context.push('/staff'),
+          ),
+          IconButton(
             icon: const Icon(Icons.logout),
             tooltip: 'Sign out',
             onPressed: () => ref.read(authServiceProvider).signOut(),
@@ -34,8 +44,18 @@ class DashboardScreen extends ConsumerWidget {
         error: (e, _) => Center(child: Text('Failed to load PGs: $e')),
         data: (pgs) {
           if (pgs.isEmpty) {
-            return const Center(
-              child: Text('No PGs assigned to your account yet.'),
+            return Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('No PGs assigned to your account yet.'),
+                  const SizedBox(height: 12),
+                  FilledButton(
+                    onPressed: () => context.push('/pgs'),
+                    child: const Text('Add a PG'),
+                  ),
+                ],
+              ),
             );
           }
           final activePgId = selectedPgId ?? pgs.first.id;

@@ -28,6 +28,21 @@ class FirestoreService {
     });
   }
 
+  /// Owner-only per Firestore rules — a manager's `list` on this collection
+  /// is denied, so this naturally returns nothing useful for non-owners.
+  Stream<List<Staff>> watchAllStaff() {
+    return _db.collection('staff').orderBy('name').snapshots().map(
+          (s) => s.docs.map((d) => Staff.fromMap(d.id, d.data())).toList(),
+        );
+  }
+
+  Future<void> updateStaffAssignment(String staffId, {required String role, required List<String> assignedPgIds}) {
+    return _db.collection('staff').doc(staffId).set(
+      {'role': role, 'assignedPgIds': assignedPgIds},
+      SetOptions(merge: true),
+    );
+  }
+
   // --- PGs ---
   Stream<List<Pg>> watchPgs(List<String> pgIds) {
     if (pgIds.isEmpty) return Stream.value(const []);
@@ -36,6 +51,24 @@ class FirestoreService {
         .where(FieldPath.documentId, whereIn: pgIds)
         .snapshots()
         .map((s) => s.docs.map((d) => Pg.fromMap(d.id, d.data())).toList());
+  }
+
+  /// Creates a PG and immediately grants the creating owner access to it —
+  /// otherwise they'd create a PG their own /staff.assignedPgIds doesn't
+  /// list, and Firestore rules would hide it from them right away.
+  Future<String> createPg({required String name, required String address, required String ownerUid}) async {
+    final pgRef = _db.collection('pgs').doc();
+    final batch = _db.batch();
+    batch.set(pgRef, Pg(id: pgRef.id, name: name, address: address, totalRooms: 0, staffIds: [ownerUid]).toMap());
+    batch.update(_db.collection('staff').doc(ownerUid), {
+      'assignedPgIds': FieldValue.arrayUnion([pgRef.id]),
+    });
+    await batch.commit();
+    return pgRef.id;
+  }
+
+  Future<void> updatePg(String pgId, {required String name, required String address}) {
+    return _db.collection('pgs').doc(pgId).set({'name': name, 'address': address}, SetOptions(merge: true));
   }
 
   Future<void> updatePgQrUrl(String pgId, String qrUrl) {

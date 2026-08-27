@@ -276,6 +276,47 @@ exports.provisionTenantLogin = onCall(async (request) => {
   return { email: tenant.email, password };
 });
 
+// Callable from the admin app, owner-only. Creates (or resets) a Firebase
+// Auth email/password account for a new or existing staff member, and
+// writes/updates their /staff doc (name, role, assignedPgIds). Returns the
+// generated password once, same one-time-reveal pattern as tenant logins.
+exports.provisionStaffLogin = onCall(async (request) => {
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "Sign in required.");
+  }
+
+  const callerSnap = await db.collection("staff").doc(request.auth.uid).get();
+  const caller = callerSnap.exists ? callerSnap.data() : null;
+  if (!caller || caller.role !== "owner") {
+    throw new HttpsError("permission-denied", "Only an owner can manage staff.");
+  }
+
+  const { email, name, role, assignedPgIds } = request.data || {};
+  if (!email || !name || !role || !Array.isArray(assignedPgIds)) {
+    throw new HttpsError("invalid-argument", "email, name, role, and assignedPgIds are required.");
+  }
+  if (role !== "owner" && role !== "manager") {
+    throw new HttpsError("invalid-argument", "role must be 'owner' or 'manager'.");
+  }
+
+  const password = randomPassword();
+  let userRecord;
+  try {
+    userRecord = await auth.getUserByEmail(email);
+    await auth.updateUser(userRecord.uid, { password });
+  } catch (err) {
+    if (err.code === "auth/user-not-found") {
+      userRecord = await auth.createUser({ email, password, displayName: name });
+    } else {
+      throw err;
+    }
+  }
+
+  await db.collection("staff").doc(userRecord.uid).set({ name, role, assignedPgIds }, { merge: true });
+
+  return { email, password };
+});
+
 // Keeps a `staff: true` custom claim on every staff member's login in sync
 // with their /staff doc, so Storage rules can check `request.auth.token.staff`
 // directly instead of an unreliable cross-service Firestore lookup.

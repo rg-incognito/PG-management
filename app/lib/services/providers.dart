@@ -76,6 +76,10 @@ final broadcastsProvider = StreamProvider.family<List<Broadcast>, String>((ref, 
   return ref.watch(firestoreServiceProvider).watchBroadcasts(pgId);
 });
 
+final allStaffProvider = StreamProvider<List<Staff>>((ref) {
+  return ref.watch(firestoreServiceProvider).watchAllStaff();
+});
+
 /// Forces a fresh ID token once per sign-in so a `staff` custom claim set
 /// after this session started (e.g. right after the owner's account was
 /// bootstrapped) becomes visible to Storage rules without a full re-login.
