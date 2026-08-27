@@ -52,6 +52,8 @@ class Tenant {
   final DateTime? exitDate;
   final double? depositRefunded;
   final String? exitNotes;
+  final String? emergencyContactName;
+  final String? emergencyContactPhone;
 
   Tenant({
     required this.id,
@@ -73,6 +75,8 @@ class Tenant {
     this.exitDate,
     this.depositRefunded,
     this.exitNotes,
+    this.emergencyContactName,
+    this.emergencyContactPhone,
   });
 
   factory Tenant.fromMap(String id, Map<String, dynamic> map) {
@@ -98,6 +102,8 @@ class Tenant {
       exitDate: (map['exitDate'] as Timestamp?)?.toDate(),
       depositRefunded: (map['depositRefunded'] as num?)?.toDouble(),
       exitNotes: map['exitNotes'] as String?,
+      emergencyContactName: map['emergencyContactName'] as String?,
+      emergencyContactPhone: map['emergencyContactPhone'] as String?,
     );
   }
 
@@ -120,5 +126,7 @@ class Tenant {
         if (exitDate != null) 'exitDate': Timestamp.fromDate(exitDate!),
         if (depositRefunded != null) 'depositRefunded': depositRefunded,
         if (exitNotes != null) 'exitNotes': exitNotes,
+        if (emergencyContactName != null) 'emergencyContactName': emergencyContactName,
+        if (emergencyContactPhone != null) 'emergencyContactPhone': emergencyContactPhone,
       };
 }

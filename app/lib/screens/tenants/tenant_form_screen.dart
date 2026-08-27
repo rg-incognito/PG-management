@@ -25,6 +25,8 @@ class _TenantFormScreenState extends ConsumerState<TenantFormScreen> {
   final _emailController = TextEditingController();
   final _rentController = TextEditingController();
   final _depositController = TextEditingController();
+  final _emergencyNameController = TextEditingController();
+  final _emergencyPhoneController = TextEditingController();
   bool _loading = true;
   bool _saving = false;
   bool _provisioningLogin = false;
@@ -54,6 +56,8 @@ class _TenantFormScreenState extends ConsumerState<TenantFormScreen> {
         _emailController.text = tenant.email;
         _rentController.text = tenant.rentAmount.toStringAsFixed(0);
         _depositController.text = tenant.depositAmount.toStringAsFixed(0);
+        _emergencyNameController.text = tenant.emergencyContactName ?? '';
+        _emergencyPhoneController.text = tenant.emergencyContactPhone ?? '';
         _selectedBedId = tenant.bedId;
         _originalBedId = tenant.bedId;
         _existingStatus = tenant.status;
@@ -73,6 +77,8 @@ class _TenantFormScreenState extends ConsumerState<TenantFormScreen> {
     _emailController.dispose();
     _rentController.dispose();
     _depositController.dispose();
+    _emergencyNameController.dispose();
+    _emergencyPhoneController.dispose();
     super.dispose();
   }
 
@@ -96,6 +102,10 @@ class _TenantFormScreenState extends ConsumerState<TenantFormScreen> {
         documents: _existingDocuments,
         verificationStatus: _existingVerificationStatus,
         verificationNote: _existingVerificationNote,
+        emergencyContactName:
+            _emergencyNameController.text.trim().isEmpty ? null : _emergencyNameController.text.trim(),
+        emergencyContactPhone:
+            _emergencyPhoneController.text.trim().isEmpty ? null : _emergencyPhoneController.text.trim(),
       );
       final savedId = await ref.read(firestoreServiceProvider).upsertTenant(tenant);
 
@@ -273,6 +283,17 @@ class _TenantFormScreenState extends ConsumerState<TenantFormScreen> {
               controller: _depositController,
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(labelText: 'Deposit amount'),
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _emergencyNameController,
+              decoration: const InputDecoration(labelText: 'Emergency contact name (optional)'),
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _emergencyPhoneController,
+              keyboardType: TextInputType.phone,
+              decoration: const InputDecoration(labelText: 'Emergency contact phone (optional)'),
             ),
             const SizedBox(height: 24),
             FilledButton(

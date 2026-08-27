@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../models/maintenance_ticket.dart';
 import '../../models/payment.dart';
 import '../../services/providers.dart';
 import '../../widgets/confirm_sign_out.dart';
@@ -126,6 +127,10 @@ class DashboardScreen extends ConsumerWidget {
                     ),
                   ],
                 ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                child: _OpenTicketsButton(pgId: activePg.id),
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -281,6 +286,27 @@ class _PendingVerificationsButton extends ConsumerWidget {
       ),
       label: const Text('Verification'),
       onPressed: () => context.push('/verification', extra: pgId),
+    );
+  }
+}
+
+class _OpenTicketsButton extends ConsumerWidget {
+  final String pgId;
+  const _OpenTicketsButton({required this.pgId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final ticketsAsync = ref.watch(ticketsProvider(pgId));
+    final openCount = ticketsAsync.value?.where((t) => t.status != TicketStatus.resolved).length ?? 0;
+
+    return OutlinedButton.icon(
+      icon: Badge(
+        label: Text('$openCount'),
+        isLabelVisible: openCount > 0,
+        child: const Icon(Icons.build),
+      ),
+      label: const Text('Maintenance tickets'),
+      onPressed: () => context.push('/maintenance', extra: pgId),
     );
   }
 }

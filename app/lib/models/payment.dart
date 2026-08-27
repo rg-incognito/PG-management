@@ -21,6 +21,7 @@ class Payment {
   final DateTime? markedAt;
   final PaymentStatus status;
   final num penaltyApplied;
+  final String? receiptUrl;
 
   Payment({
     required this.id,
@@ -33,6 +34,7 @@ class Payment {
     this.markedAt,
     required this.status,
     this.penaltyApplied = 0,
+    this.receiptUrl,
   });
 
   factory Payment.fromMap(String id, Map<String, dynamic> map) {
@@ -47,6 +49,7 @@ class Payment {
       markedAt: (map['markedAt'] as Timestamp?)?.toDate(),
       status: paymentStatusFromString(map['status'] as String? ?? 'pending'),
       penaltyApplied: map['penaltyApplied'] as num? ?? 0,
+      receiptUrl: map['receiptUrl'] as String?,
     );
   }
 
@@ -60,5 +63,6 @@ class Payment {
         'markedAt': FieldValue.serverTimestamp(),
         'status': status.name,
         'penaltyApplied': penaltyApplied,
+        if (receiptUrl != null) 'receiptUrl': receiptUrl,
       };
 }

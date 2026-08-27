@@ -103,6 +103,9 @@ service cloud.firestore {
         || (isLinkedTenant(resource.data)
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['fcmToken', 'lastSeenBroadcastAt']))
         || (isLinkedTenant(resource.data)
+            && request.resource.data.diff(resource.data).affectedKeys()
+                .hasOnly(['mobile', 'emergencyContactName', 'emergencyContactPhone']))
+        || (isLinkedTenant(resource.data)
             && request.auth.token.email_verified == true
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['documents', 'verificationStatus'])
             && request.resource.data.verificationStatus == 'pending');
@@ -147,6 +150,22 @@ service cloud.firestore {
       allow get, list: if hasPgAccess(resource.data.pgId) || isTenantOfPg(resource.data.pgId);
       allow create: if hasPgAccess(request.resource.data.pgId)
         && request.resource.data.sentBy == request.auth.uid;
+    }
+
+    // /maintenanceTickets/{ticketId} — a tenant-reported issue (leaking tap,
+    // wifi down, etc). Staff manage fully; the reporting tenant can read
+    // their own and create new ones (mirrors paymentClaims' tenantAuthUid
+    // pattern to avoid a get() on the tenant doc), but only staff resolve
+    // them.
+    match /maintenanceTickets/{ticketId} {
+      allow get, list: if hasPgAccess(resource.data.pgId) || resource.data.tenantAuthUid == request.auth.uid;
+      allow update, delete: if hasPgAccess(resource.data.pgId);
+      allow create: if isSignedIn()
+        && request.resource.data.tenantAuthUid == request.auth.uid
+        && isLinkedTenant(get(/databases/$(database)/documents/tenants/$(request.resource.data.tenantId)).data)
+        && request.resource.data.pgId ==
+           get(/databases/$(database)/documents/tenants/$(request.resource.data.tenantId)).data.pgId
+        && request.resource.data.status == 'open';
     }
   }
 }

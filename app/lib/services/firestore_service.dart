@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/bed.dart';
 import '../models/broadcast.dart';
 import '../models/flat.dart';
+import '../models/maintenance_ticket.dart';
 import '../models/payment.dart';
 import '../models/payment_claim.dart';
 import '../models/pg.dart';
@@ -298,6 +299,7 @@ class FirestoreService {
     required double amountPaid,
     required PaymentMode mode,
     required String markedByUid,
+    String? receiptUrl,
   }) {
     final payment = Payment(
       id: '${tenantId}_$month',
@@ -308,6 +310,7 @@ class FirestoreService {
       mode: mode,
       markedBy: markedByUid,
       status: PaymentStatus.paid,
+      receiptUrl: receiptUrl,
     );
     return _db.collection('payments').doc(payment.id).set(payment.toMap(), SetOptions(merge: true));
   }
@@ -366,6 +369,7 @@ class FirestoreService {
         amountPaid: amountPaid ?? 0,
         mode: mode,
         markedByUid: reviewerUid,
+        receiptUrl: claim.receiptUrl,
       );
     }
     await _db.collection('paymentClaims').doc(claim.id).update({
@@ -400,5 +404,29 @@ class FirestoreService {
   Future<void> sendBroadcast({required String pgId, required String title, required String message, required String sentByUid}) {
     final broadcast = Broadcast(id: '', pgId: pgId, title: title, message: message, sentBy: sentByUid);
     return _db.collection('broadcasts').add(broadcast.toMap());
+  }
+
+  // --- Maintenance tickets ---
+  Stream<List<MaintenanceTicket>> watchTickets(String pgId) {
+    return _db
+        .collection('maintenanceTickets')
+        .where('pgId', isEqualTo: pgId)
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((s) => s.docs.map((d) => MaintenanceTicket.fromMap(d.id, d.data())).toList());
+  }
+
+  Future<void> updateTicketStatus({
+    required String ticketId,
+    required TicketStatus status,
+    String? resolutionNote,
+    String? resolvedByUid,
+  }) {
+    return _db.collection('maintenanceTickets').doc(ticketId).update({
+      'status': status.name,
+      if (status == TicketStatus.resolved) 'resolvedAt': FieldValue.serverTimestamp(),
+      'resolvedBy': ?resolvedByUid,
+      'resolutionNote': ?resolutionNote,
+    });
   }
 }

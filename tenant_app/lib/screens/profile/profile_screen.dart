@@ -20,6 +20,58 @@ class ProfileScreen extends ConsumerStatefulWidget {
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   bool _uploading = false;
 
+  Future<void> _editContactInfo(Tenant tenant) async {
+    final mobileController = TextEditingController(text: tenant.mobile);
+    final nameController = TextEditingController(text: tenant.emergencyContactName ?? '');
+    final phoneController = TextEditingController(text: tenant.emergencyContactPhone ?? '');
+
+    final save = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit contact info'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: mobileController,
+              keyboardType: TextInputType.phone,
+              decoration: const InputDecoration(labelText: 'My mobile number'),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: nameController,
+              decoration: const InputDecoration(labelText: 'Emergency contact name'),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: phoneController,
+              keyboardType: TextInputType.phone,
+              decoration: const InputDecoration(labelText: 'Emergency contact phone'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
+          FilledButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Save')),
+        ],
+      ),
+    );
+    if (save != true) return;
+
+    try {
+      await ref.read(firestoreServiceProvider).updateContactInfo(
+            tenant.id,
+            mobile: mobileController.text.trim(),
+            emergencyContactName: nameController.text.trim().isEmpty ? null : nameController.text.trim(),
+            emergencyContactPhone: phoneController.text.trim().isEmpty ? null : phoneController.text.trim(),
+          );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Could not save: $e')));
+      }
+    }
+  }
+
   Future<void> _uploadDocument() async {
     final type = await showDialog<String>(
       context: context,
@@ -65,8 +117,22 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Text(tenant.name, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-          Text(tenant.mobile),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(tenant.name, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              IconButton(
+                icon: const Icon(Icons.edit),
+                tooltip: 'Edit contact info',
+                onPressed: () => _editContactInfo(tenant),
+              ),
+            ],
+          ),
+          Text('Mobile: ${tenant.mobile}'),
+          if (tenant.emergencyContactName != null || tenant.emergencyContactPhone != null) ...[
+            const SizedBox(height: 4),
+            Text('Emergency contact: ${tenant.emergencyContactName ?? '—'} · ${tenant.emergencyContactPhone ?? '—'}'),
+          ],
           const SizedBox(height: 16),
           _StatusBanner(tenant: tenant),
           const SizedBox(height: 24),

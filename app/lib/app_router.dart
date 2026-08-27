@@ -8,6 +8,7 @@ import 'screens/activity/activity_log_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/broadcasts/broadcasts_screen.dart';
 import 'screens/dashboard/dashboard_screen.dart';
+import 'screens/maintenance/maintenance_screen.dart';
 import 'screens/pgs/pg_management_screen.dart';
 import 'screens/reports/reports_screen.dart';
 import 'screens/rooms/rooms_screen.dart';
@@ -95,6 +96,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/activity',
         builder: (_, state) => ActivityLogScreen(pgId: state.extra as String),
+      ),
+      GoRoute(
+        path: '/maintenance',
+        builder: (_, state) => MaintenanceScreen(pgId: state.extra as String),
       ),
       GoRoute(
         path: '/broadcasts',

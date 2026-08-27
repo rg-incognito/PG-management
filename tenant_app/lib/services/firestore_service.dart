@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/broadcast.dart';
+import '../models/maintenance_ticket.dart';
 import '../models/payment.dart';
 import '../models/pg.dart';
 import '../models/tenant.dart';
@@ -38,6 +39,19 @@ class FirestoreService {
     });
   }
 
+  Future<void> updateContactInfo(
+    String tenantId, {
+    required String mobile,
+    String? emergencyContactName,
+    String? emergencyContactPhone,
+  }) {
+    return _db.collection('tenants').doc(tenantId).update({
+      'mobile': mobile,
+      'emergencyContactName': emergencyContactName,
+      'emergencyContactPhone': emergencyContactPhone,
+    });
+  }
+
   Stream<Pg?> watchPg(String pgId) {
     return _db.collection('pgs').doc(pgId).snapshots().map(
           (d) => d.exists ? Pg.fromMap(d.id, d.data()!) : null,
@@ -68,6 +82,37 @@ class FirestoreService {
       {'lastSeenBroadcastAt': FieldValue.serverTimestamp()},
       SetOptions(merge: true),
     );
+  }
+
+  Stream<List<MaintenanceTicket>> watchMyTickets(String tenantAuthUid) {
+    return _db
+        .collection('maintenanceTickets')
+        .where('tenantAuthUid', isEqualTo: tenantAuthUid)
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((s) => s.docs.map((d) => MaintenanceTicket.fromMap(d.id, d.data())).toList());
+  }
+
+  Future<void> createTicket({
+    required String pgId,
+    required String tenantId,
+    required String tenantAuthUid,
+    required String tenantName,
+    required String title,
+    required String description,
+    String? photoUrl,
+  }) {
+    return _db.collection('maintenanceTickets').add({
+      'pgId': pgId,
+      'tenantId': tenantId,
+      'tenantAuthUid': tenantAuthUid,
+      'tenantName': tenantName,
+      'title': title,
+      'description': description,
+      'photoUrl': ?photoUrl,
+      'status': 'open',
+      'createdAt': FieldValue.serverTimestamp(),
+    });
   }
 
   Future<void> submitPaymentClaim({

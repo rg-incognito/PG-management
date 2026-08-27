@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/legacy.dart';
 import '../models/bed.dart';
 import '../models/broadcast.dart';
 import '../models/flat.dart';
+import '../models/maintenance_ticket.dart';
 import '../models/payment.dart';
 import '../models/payment_claim.dart';
 import '../models/pg.dart';
@@ -64,6 +65,10 @@ final recentPaymentsProvider = StreamProvider.family<List<Payment>, String>((ref
 
 final recentResolvedClaimsProvider = StreamProvider.family<List<PaymentClaim>, String>((ref, pgId) {
   return ref.watch(firestoreServiceProvider).watchRecentResolvedClaims(pgId);
+});
+
+final ticketsProvider = StreamProvider.family<List<MaintenanceTicket>, String>((ref, pgId) {
+  return ref.watch(firestoreServiceProvider).watchTickets(pgId);
 });
 
 final pendingClaimsProvider = StreamProvider.family<List<PaymentClaim>, String>((ref, pgId) {

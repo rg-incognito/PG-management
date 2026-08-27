@@ -26,4 +26,10 @@ class StorageService {
     await ref.putData(await file.readAsBytes(), _imageMetadata);
     return ref.getDownloadURL();
   }
+
+  Future<String> uploadMaintenancePhoto(String pgId, String tenantId, File file) async {
+    final ref = _storage.ref('maintenance_photos/$pgId/$tenantId/${DateTime.now().millisecondsSinceEpoch}.jpg');
+    await ref.putData(await file.readAsBytes(), _imageMetadata);
+    return ref.getDownloadURL();
+  }
 }

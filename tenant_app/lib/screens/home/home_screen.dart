@@ -6,6 +6,7 @@ import '../../models/payment.dart';
 import '../../models/tenant.dart';
 import '../../services/providers.dart';
 import '../../widgets/confirm_sign_out.dart';
+import '../maintenance/maintenance_screen.dart';
 import '../profile/profile_screen.dart';
 import 'announcements_screen.dart';
 import 'upload_receipt_sheet.dart';
@@ -30,6 +31,13 @@ class HomeScreen extends ConsumerWidget {
         title: Text('Hi, ${tenant.name}'),
         actions: [
           _AnnouncementsButton(tenant: tenant),
+          IconButton(
+            icon: const Icon(Icons.build),
+            tooltip: 'Maintenance requests',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => MaintenanceScreen(tenant: tenant)),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.person),
             tooltip: 'My profile',
@@ -185,6 +193,36 @@ class _HistoryTile extends StatelessWidget {
       title: Text(monthLabel),
       subtitle: Text(payment.status.name.toUpperCase()),
       trailing: Text('₹${payment.amountPaid.toStringAsFixed(0)}'),
+      onTap: payment.status == PaymentStatus.paid ? () => _showReceipt(context, monthLabel) : null,
+    );
+  }
+
+  void _showReceipt(BuildContext context, String monthLabel) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Receipt — $monthLabel', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
+            Text('Amount paid: ₹${payment.amountPaid.toStringAsFixed(0)}'),
+            if (payment.mode != null) Text('Mode: ${payment.mode!.toUpperCase()}'),
+            if (payment.markedAt != null)
+              Text('Confirmed on: ${DateFormat.yMMMd().add_jm().format(payment.markedAt!)}'),
+            if (payment.receiptUrl != null) ...[
+              const SizedBox(height: 12),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.network(payment.receiptUrl!, height: 240, fit: BoxFit.contain),
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }

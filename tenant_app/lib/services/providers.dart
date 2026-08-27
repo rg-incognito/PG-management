@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/broadcast.dart';
+import '../models/maintenance_ticket.dart';
 import '../models/payment.dart';
 import '../models/pg.dart';
 import '../models/tenant.dart';
@@ -51,4 +52,8 @@ final tenantStreamProvider = StreamProvider.family<Tenant?, String>((ref, tenant
 
 final broadcastsProvider = StreamProvider.family<List<Broadcast>, String>((ref, pgId) {
   return ref.watch(firestoreServiceProvider).watchBroadcasts(pgId);
+});
+
+final myTicketsProvider = StreamProvider.family<List<MaintenanceTicket>, String>((ref, tenantAuthUid) {
+  return ref.watch(firestoreServiceProvider).watchMyTickets(tenantAuthUid);
 });

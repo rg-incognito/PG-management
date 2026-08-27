@@ -38,6 +38,8 @@ class Tenant {
   final VerificationStatus verificationStatus;
   final String? verificationNote;
   final DateTime? lastSeenBroadcastAt;
+  final String? emergencyContactName;
+  final String? emergencyContactPhone;
 
   Tenant({
     required this.id,
@@ -50,6 +52,8 @@ class Tenant {
     this.verificationStatus = VerificationStatus.notSubmitted,
     this.verificationNote,
     this.lastSeenBroadcastAt,
+    this.emergencyContactName,
+    this.emergencyContactPhone,
   });
 
   factory Tenant.fromMap(String id, Map<String, dynamic> map) {
@@ -66,6 +70,8 @@ class Tenant {
       verificationStatus: verificationStatusFromString(map['verificationStatus'] as String? ?? 'notSubmitted'),
       verificationNote: map['verificationNote'] as String?,
       lastSeenBroadcastAt: (map['lastSeenBroadcastAt'] as Timestamp?)?.toDate(),
+      emergencyContactName: map['emergencyContactName'] as String?,
+      emergencyContactPhone: map['emergencyContactPhone'] as String?,
     );
   }
 }
