@@ -93,14 +93,15 @@ service cloud.firestore {
     // only needs read access here, plus a narrow self-update for fcmToken.
     match /tenants/{tenantId} {
       allow get, list: if hasPgAccess(resource.data.pgId) || isLinkedTenant(resource.data);
-      // fcmToken is always self-updatable. Uploading documents requires a
-      // verified email (checked via the auth token's email_verified claim,
-      // set server-side by Firebase Auth — can't be spoofed by the client)
-      // and can only ever set verificationStatus to 'pending', never
-      // 'verified'/'rejected' — that stays staff-only via hasPgAccess.
+      // fcmToken/lastSeenBroadcastAt are always self-updatable. Uploading
+      // documents requires a verified email (checked via the auth token's
+      // email_verified claim, set server-side by Firebase Auth — can't be
+      // spoofed by the client) and can only ever set verificationStatus to
+      // 'pending', never 'verified'/'rejected' — that stays staff-only via
+      // hasPgAccess.
       allow update: if hasPgAccess(resource.data.pgId)
         || (isLinkedTenant(resource.data)
-            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['fcmToken']))
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['fcmToken', 'lastSeenBroadcastAt']))
         || (isLinkedTenant(resource.data)
             && request.auth.token.email_verified == true
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['documents', 'verificationStatus'])

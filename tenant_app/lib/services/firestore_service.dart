@@ -63,6 +63,13 @@ class FirestoreService {
         .map((s) => s.docs.map((d) => Broadcast.fromMap(d.id, d.data())).toList());
   }
 
+  Future<void> markBroadcastsSeen(String tenantId) {
+    return _db.collection('tenants').doc(tenantId).set(
+      {'lastSeenBroadcastAt': FieldValue.serverTimestamp()},
+      SetOptions(merge: true),
+    );
+  }
+
   Future<void> submitPaymentClaim({
     required String tenantId,
     required String tenantAuthUid,

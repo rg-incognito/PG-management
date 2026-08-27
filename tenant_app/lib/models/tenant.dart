@@ -37,6 +37,7 @@ class Tenant {
   final List<TenantDocument> documents;
   final VerificationStatus verificationStatus;
   final String? verificationNote;
+  final DateTime? lastSeenBroadcastAt;
 
   Tenant({
     required this.id,
@@ -48,6 +49,7 @@ class Tenant {
     this.documents = const [],
     this.verificationStatus = VerificationStatus.notSubmitted,
     this.verificationNote,
+    this.lastSeenBroadcastAt,
   });
 
   factory Tenant.fromMap(String id, Map<String, dynamic> map) {
@@ -63,6 +65,7 @@ class Tenant {
           .toList(),
       verificationStatus: verificationStatusFromString(map['verificationStatus'] as String? ?? 'notSubmitted'),
       verificationNote: map['verificationNote'] as String?,
+      lastSeenBroadcastAt: (map['lastSeenBroadcastAt'] as Timestamp?)?.toDate(),
     );
   }
 }
