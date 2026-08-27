@@ -7,8 +7,16 @@ class AuthService {
 
   User? get currentUser => _auth.currentUser;
 
-  Future<UserCredential> signIn(String email, String password) {
-    return _auth.signInWithEmailAndPassword(email: email, password: password);
+  Future<UserCredential> signIn(String email, String password) async {
+    final credential = await _auth.signInWithEmailAndPassword(email: email, password: password);
+    // Refresh once, right after sign-in, so a `tenantId` custom claim set
+    // after this login was created (or reset) is picked up. Done here —
+    // once, synchronously in the sign-in flow — rather than reactively
+    // inside a provider, since repeated/concurrent forced token refreshes
+    // triggered by Riverpod rebuilds appeared to desync the native Storage
+    // SDK's cached auth state on at least one device.
+    await credential.user?.getIdToken(true);
+    return credential;
   }
 
   Future<void> signOut() => _auth.signOut();
@@ -29,9 +37,4 @@ class AuthService {
     await user.reload();
     return _auth.currentUser?.emailVerified ?? false;
   }
-
-  /// Forces a fresh ID token so a `tenantId` custom claim set after this
-  /// login was created (or reset) becomes visible to Storage rules without
-  /// requiring a full re-login.
-  Future<void> refreshClaims() => _auth.currentUser?.getIdToken(true) ?? Future.value();
 }

@@ -25,10 +25,6 @@ final linkedTenantProvider = FutureProvider<Tenant?>((ref) async {
   final user = ref.watch(authStateProvider).value;
   if (user == null) return null;
 
-  // Picks up a `tenantId` custom claim if it was set after this session's
-  // token was first issued (e.g. logging in right after provisioning).
-  await ref.watch(authServiceProvider).refreshClaims();
-
   final tenant = await ref.watch(firestoreServiceProvider).findTenantByAuthUid(user.uid);
   if (tenant == null) return null;
 
