@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'screens/activity/activity_log_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/broadcasts/broadcasts_screen.dart';
 import 'screens/dashboard/dashboard_screen.dart';
@@ -90,6 +91,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/reports',
         builder: (_, state) => ReportsScreen(pgId: state.extra as String),
+      ),
+      GoRoute(
+        path: '/activity',
+        builder: (_, state) => ActivityLogScreen(pgId: state.extra as String),
       ),
       GoRoute(
         path: '/broadcasts',

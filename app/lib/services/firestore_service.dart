@@ -312,6 +312,19 @@ class FirestoreService {
     return _db.collection('payments').doc(payment.id).set(payment.toMap(), SetOptions(merge: true));
   }
 
+  /// Recent payment-marking activity for the activity log, newest first.
+  /// Docs without `markedAt` (never marked paid) are naturally excluded by
+  /// the orderBy.
+  Stream<List<Payment>> watchRecentPayments(String pgId, {int limit = 50}) {
+    return _db
+        .collection('payments')
+        .where('pgId', isEqualTo: pgId)
+        .orderBy('markedAt', descending: true)
+        .limit(limit)
+        .snapshots()
+        .map((s) => s.docs.map((d) => Payment.fromMap(d.id, d.data())).toList());
+  }
+
   // --- Payment claims ---
   Stream<List<PaymentClaim>> watchPendingClaims(String pgId) {
     return _db
@@ -319,6 +332,19 @@ class FirestoreService {
         .where('pgId', isEqualTo: pgId)
         .where('status', isEqualTo: PaymentClaimStatus.pending.name)
         .orderBy('submittedAt', descending: true)
+        .snapshots()
+        .map((s) => s.docs.map((d) => PaymentClaim.fromMap(d.id, d.data())).toList());
+  }
+
+  /// Recently reviewed (approved/rejected) claims for the activity log,
+  /// newest first. Still-pending claims lack `reviewedAt` and are naturally
+  /// excluded by the orderBy.
+  Stream<List<PaymentClaim>> watchRecentResolvedClaims(String pgId, {int limit = 50}) {
+    return _db
+        .collection('paymentClaims')
+        .where('pgId', isEqualTo: pgId)
+        .orderBy('reviewedAt', descending: true)
+        .limit(limit)
         .snapshots()
         .map((s) => s.docs.map((d) => PaymentClaim.fromMap(d.id, d.data())).toList());
   }

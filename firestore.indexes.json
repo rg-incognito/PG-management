@@ -82,6 +82,22 @@
         { "fieldPath": "pgId", "order": "ASCENDING" },
         { "fieldPath": "sentAt", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "payments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "pgId", "order": "ASCENDING" },
+        { "fieldPath": "markedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "paymentClaims",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "pgId", "order": "ASCENDING" },
+        { "fieldPath": "reviewedAt", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

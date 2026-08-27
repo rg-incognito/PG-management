@@ -145,10 +145,24 @@ class DashboardScreen extends ConsumerWidget {
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                child: OutlinedButton.icon(
-                  icon: const Icon(Icons.bar_chart),
-                  label: const Text('Reports'),
-                  onPressed: () => context.push('/reports', extra: activePg.id),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        icon: const Icon(Icons.bar_chart),
+                        label: const Text('Reports'),
+                        onPressed: () => context.push('/reports', extra: activePg.id),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        icon: const Icon(Icons.history_edu),
+                        label: const Text('Activity log'),
+                        onPressed: () => context.push('/activity', extra: activePg.id),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],

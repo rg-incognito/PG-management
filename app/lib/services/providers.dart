@@ -58,6 +58,14 @@ final paymentsForMonthProvider =
   return ref.watch(firestoreServiceProvider).watchPaymentsForPgAndMonth(params.pgId, params.month);
 });
 
+final recentPaymentsProvider = StreamProvider.family<List<Payment>, String>((ref, pgId) {
+  return ref.watch(firestoreServiceProvider).watchRecentPayments(pgId);
+});
+
+final recentResolvedClaimsProvider = StreamProvider.family<List<PaymentClaim>, String>((ref, pgId) {
+  return ref.watch(firestoreServiceProvider).watchRecentResolvedClaims(pgId);
+});
+
 final pendingClaimsProvider = StreamProvider.family<List<PaymentClaim>, String>((ref, pgId) {
   return ref.watch(firestoreServiceProvider).watchPendingClaims(pgId);
 });
