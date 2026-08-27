@@ -143,6 +143,14 @@ class DashboardScreen extends ConsumerWidget {
                   ],
                 ),
               ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                child: OutlinedButton.icon(
+                  icon: const Icon(Icons.bar_chart),
+                  label: const Text('Reports'),
+                  onPressed: () => context.push('/reports', extra: activePg.id),
+                ),
+              ),
             ],
           );
         },

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/legacy.dart';
 import '../models/bed.dart';
 import '../models/broadcast.dart';
 import '../models/flat.dart';
+import '../models/payment.dart';
 import '../models/payment_claim.dart';
 import '../models/pg.dart';
 import '../models/room.dart';
@@ -50,6 +51,11 @@ final tenantsProvider = StreamProvider.family<List<Tenant>, String>((ref, pgId) 
 
 final exitedTenantsProvider = StreamProvider.family<List<Tenant>, String>((ref, pgId) {
   return ref.watch(firestoreServiceProvider).watchTenants(pgId, status: TenantStatus.exited);
+});
+
+final paymentsForMonthProvider =
+    StreamProvider.family<List<Payment>, ({String pgId, String month})>((ref, params) {
+  return ref.watch(firestoreServiceProvider).watchPaymentsForPgAndMonth(params.pgId, params.month);
 });
 
 final pendingClaimsProvider = StreamProvider.family<List<PaymentClaim>, String>((ref, pgId) {

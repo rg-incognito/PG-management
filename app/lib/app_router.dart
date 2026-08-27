@@ -8,6 +8,7 @@ import 'screens/auth/login_screen.dart';
 import 'screens/broadcasts/broadcasts_screen.dart';
 import 'screens/dashboard/dashboard_screen.dart';
 import 'screens/pgs/pg_management_screen.dart';
+import 'screens/reports/reports_screen.dart';
 import 'screens/rooms/rooms_screen.dart';
 import 'screens/settings/pg_settings_screen.dart';
 import 'screens/staff/staff_management_screen.dart';
@@ -85,6 +86,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/verification',
         builder: (_, state) => TenantVerificationScreen(pgId: state.extra as String),
+      ),
+      GoRoute(
+        path: '/reports',
+        builder: (_, state) => ReportsScreen(pgId: state.extra as String),
       ),
       GoRoute(
         path: '/broadcasts',
