@@ -9,6 +9,8 @@ class PgSettings {
   final PenaltyType penaltyType;
   final double penaltyValue;
   final int reminderDaysBefore;
+  final String? ownerName;
+  final String? contactPhone;
 
   PgSettings({
     required this.pgId,
@@ -16,6 +18,8 @@ class PgSettings {
     this.penaltyType = PenaltyType.flat,
     this.penaltyValue = 0,
     this.reminderDaysBefore = 3,
+    this.ownerName,
+    this.contactPhone,
   });
 
   factory PgSettings.fromMap(String pgId, Map<String, dynamic> map) {
@@ -25,6 +29,8 @@ class PgSettings {
       penaltyType: penaltyTypeFromString(map['penaltyType'] as String? ?? 'flat'),
       penaltyValue: (map['penaltyValue'] as num?)?.toDouble() ?? 0,
       reminderDaysBefore: (map['reminderDaysBefore'] as num?)?.toInt() ?? 3,
+      ownerName: map['ownerName'] as String?,
+      contactPhone: map['contactPhone'] as String?,
     );
   }
 
@@ -33,5 +39,7 @@ class PgSettings {
         'penaltyType': penaltyType.name,
         'penaltyValue': penaltyValue,
         'reminderDaysBefore': reminderDaysBefore,
+        if (ownerName != null) 'ownerName': ownerName,
+        if (contactPhone != null) 'contactPhone': contactPhone,
       };
 }

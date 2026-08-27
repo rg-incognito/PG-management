@@ -19,6 +19,8 @@ class _PgSettingsScreenState extends ConsumerState<PgSettingsScreen> {
   final _dueDateController = TextEditingController();
   final _penaltyValueController = TextEditingController();
   final _reminderDaysController = TextEditingController();
+  final _ownerNameController = TextEditingController();
+  final _contactPhoneController = TextEditingController();
   PenaltyType _penaltyType = PenaltyType.flat;
   bool _loading = true;
   bool _saving = false;
@@ -36,6 +38,8 @@ class _PgSettingsScreenState extends ConsumerState<PgSettingsScreen> {
     _dueDateController.text = settings.dueDate.toString();
     _penaltyValueController.text = settings.penaltyValue.toStringAsFixed(0);
     _reminderDaysController.text = settings.reminderDaysBefore.toString();
+    _ownerNameController.text = settings.ownerName ?? '';
+    _contactPhoneController.text = settings.contactPhone ?? '';
     _penaltyType = settings.penaltyType;
 
     final pgs = await ref.read(firestoreServiceProvider).watchPgs([widget.pgId]).first;
@@ -49,6 +53,8 @@ class _PgSettingsScreenState extends ConsumerState<PgSettingsScreen> {
     _dueDateController.dispose();
     _penaltyValueController.dispose();
     _reminderDaysController.dispose();
+    _ownerNameController.dispose();
+    _contactPhoneController.dispose();
     super.dispose();
   }
 
@@ -61,6 +67,8 @@ class _PgSettingsScreenState extends ConsumerState<PgSettingsScreen> {
         penaltyType: _penaltyType,
         penaltyValue: double.tryParse(_penaltyValueController.text) ?? 0,
         reminderDaysBefore: int.tryParse(_reminderDaysController.text) ?? 3,
+        ownerName: _ownerNameController.text.trim().isEmpty ? null : _ownerNameController.text.trim(),
+        contactPhone: _contactPhoneController.text.trim().isEmpty ? null : _contactPhoneController.text.trim(),
       );
       await ref.read(firestoreServiceProvider).saveSettings(settings);
       if (mounted) {
@@ -123,6 +131,24 @@ class _PgSettingsScreenState extends ConsumerState<PgSettingsScreen> {
                 ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2))
                 : const Icon(Icons.qr_code),
             label: Text(_qrUrl == null ? 'Upload QR code' : 'Replace QR code'),
+          ),
+          const Divider(height: 40),
+          Text('Receipt details', style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 4),
+          Text(
+            'Shown on generated rent receipts as the issuer.',
+            style: TextStyle(color: Colors.grey.shade600),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _ownerNameController,
+            decoration: const InputDecoration(labelText: 'Owner name (optional)'),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _contactPhoneController,
+            keyboardType: TextInputType.phone,
+            decoration: const InputDecoration(labelText: 'Contact phone (optional)'),
           ),
           const Divider(height: 40),
           Text('Due date & penalty', style: Theme.of(context).textTheme.titleMedium),

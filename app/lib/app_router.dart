@@ -10,6 +10,7 @@ import 'screens/broadcasts/broadcasts_screen.dart';
 import 'screens/dashboard/dashboard_screen.dart';
 import 'screens/maintenance/maintenance_screen.dart';
 import 'screens/pgs/pg_management_screen.dart';
+import 'screens/receipts/receipts_screen.dart';
 import 'screens/reports/reports_screen.dart';
 import 'screens/rooms/rooms_screen.dart';
 import 'screens/settings/pg_settings_screen.dart';
@@ -100,6 +101,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/maintenance',
         builder: (_, state) => MaintenanceScreen(pgId: state.extra as String),
+      ),
+      GoRoute(
+        path: '/receipts',
+        builder: (_, state) => ReceiptsScreen(pgId: state.extra as String),
       ),
       GoRoute(
         path: '/broadcasts',

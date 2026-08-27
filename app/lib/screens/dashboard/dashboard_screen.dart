@@ -130,7 +130,19 @@ class DashboardScreen extends ConsumerWidget {
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                child: _OpenTicketsButton(pgId: activePg.id),
+                child: Row(
+                  children: [
+                    Expanded(child: _OpenTicketsButton(pgId: activePg.id)),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        icon: const Icon(Icons.receipt_long),
+                        label: const Text('Receipts'),
+                        onPressed: () => context.push('/receipts', extra: activePg.id),
+                      ),
+                    ),
+                  ],
+                ),
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),

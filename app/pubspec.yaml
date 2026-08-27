@@ -44,6 +44,8 @@ dependencies:
   intl: ^0.20.3
   image_picker: ^1.2.3
   cloud_functions: ^6.4.0
+  pdf: ^3.11.3
+  printing: ^5.14.2
 
 dev_dependencies:
   flutter_test:
