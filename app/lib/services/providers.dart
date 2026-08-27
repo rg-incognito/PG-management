@@ -48,6 +48,10 @@ final tenantsProvider = StreamProvider.family<List<Tenant>, String>((ref, pgId) 
   return ref.watch(firestoreServiceProvider).watchTenants(pgId, status: TenantStatus.active);
 });
 
+final exitedTenantsProvider = StreamProvider.family<List<Tenant>, String>((ref, pgId) {
+  return ref.watch(firestoreServiceProvider).watchTenants(pgId, status: TenantStatus.exited);
+});
+
 final pendingClaimsProvider = StreamProvider.family<List<PaymentClaim>, String>((ref, pgId) {
   return ref.watch(firestoreServiceProvider).watchPendingClaims(pgId);
 });

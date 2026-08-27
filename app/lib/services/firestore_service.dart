@@ -230,6 +230,28 @@ class FirestoreService {
     });
   }
 
+  /// Checks a tenant out: frees their bed and marks them exited with a
+  /// deposit-settlement record, in one atomic batch.
+  Future<void> exitTenant({
+    required String tenantId,
+    required String bedId,
+    required DateTime exitDate,
+    required double depositRefunded,
+    String? notes,
+  }) async {
+    final batch = _db.batch();
+    if (bedId.isNotEmpty) {
+      batch.update(_db.collection('beds').doc(bedId), {'tenantId': null});
+    }
+    batch.update(_db.collection('tenants').doc(tenantId), {
+      'status': TenantStatus.exited.name,
+      'exitDate': Timestamp.fromDate(exitDate),
+      'depositRefunded': depositRefunded,
+      'exitNotes': notes,
+    });
+    await batch.commit();
+  }
+
   // --- Payments ---
   Stream<List<Payment>> watchPaymentsForTenant(String tenantId) {
     return _db

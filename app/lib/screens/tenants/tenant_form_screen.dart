@@ -130,6 +130,32 @@ class _TenantFormScreenState extends ConsumerState<TenantFormScreen> {
     }
   }
 
+  Future<void> _exitTenant() async {
+    final result = await showDialog<_ExitResult>(
+      context: context,
+      builder: (context) => _ExitTenantDialog(defaultDeposit: double.tryParse(_depositController.text) ?? 0),
+    );
+    if (result == null) return;
+
+    setState(() => _saving = true);
+    try {
+      await ref.read(firestoreServiceProvider).exitTenant(
+            tenantId: widget.tenantId!,
+            bedId: _originalBedId ?? '',
+            exitDate: result.exitDate,
+            depositRefunded: result.depositRefunded,
+            notes: result.notes,
+          );
+      if (mounted) Navigator.of(context).pop();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Could not check out tenant: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
   Future<void> _showCredentialsDialog(String email, String password) {
     return showDialog(
       context: context,
@@ -266,6 +292,15 @@ class _TenantFormScreenState extends ConsumerState<TenantFormScreen> {
                     ? null
                     : () => _provisionLogin(widget.tenantId!),
               ),
+              if (_existingStatus == TenantStatus.active) ...[
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
+                  icon: const Icon(Icons.logout),
+                  label: const Text('Exit tenant / checkout'),
+                  onPressed: _saving ? null : _exitTenant,
+                ),
+              ],
             ],
           ],
         ),
@@ -311,4 +346,88 @@ class _BedOption {
   final RoomType roomType;
   final String label;
   _BedOption({required this.bed, required this.roomType, required this.label});
+}
+
+class _ExitResult {
+  final DateTime exitDate;
+  final double depositRefunded;
+  final String? notes;
+  _ExitResult({required this.exitDate, required this.depositRefunded, this.notes});
+}
+
+class _ExitTenantDialog extends StatefulWidget {
+  final double defaultDeposit;
+  const _ExitTenantDialog({required this.defaultDeposit});
+
+  @override
+  State<_ExitTenantDialog> createState() => _ExitTenantDialogState();
+}
+
+class _ExitTenantDialogState extends State<_ExitTenantDialog> {
+  late final TextEditingController _refundController =
+      TextEditingController(text: widget.defaultDeposit.toStringAsFixed(0));
+  final TextEditingController _notesController = TextEditingController();
+  DateTime _exitDate = DateTime.now();
+
+  @override
+  void dispose() {
+    _refundController.dispose();
+    _notesController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _exitDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now().add(const Duration(days: 1)),
+    );
+    if (picked != null) setState(() => _exitDate = picked);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Exit tenant / checkout'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('This frees their bed and marks them as exited. This cannot be undone from here.'),
+          const SizedBox(height: 16),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Exit date'),
+            subtitle: Text('${_exitDate.year}-${_exitDate.month.toString().padLeft(2, '0')}-${_exitDate.day.toString().padLeft(2, '0')}'),
+            trailing: const Icon(Icons.calendar_today),
+            onTap: _pickDate,
+          ),
+          TextField(
+            controller: _refundController,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(labelText: 'Deposit refunded'),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _notesController,
+            decoration: const InputDecoration(labelText: 'Notes (optional)'),
+            maxLines: 2,
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel')),
+        FilledButton(
+          style: FilledButton.styleFrom(backgroundColor: Colors.red),
+          onPressed: () => Navigator.of(context).pop(_ExitResult(
+            exitDate: _exitDate,
+            depositRefunded: double.tryParse(_refundController.text) ?? 0,
+            notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
+          )),
+          child: const Text('Confirm exit'),
+        ),
+      ],
+    );
+  }
 }

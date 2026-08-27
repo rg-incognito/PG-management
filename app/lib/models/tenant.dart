@@ -49,6 +49,9 @@ class Tenant {
   final String? verificationNote;
   final String? fcmToken;
   final String? authUid;
+  final DateTime? exitDate;
+  final double? depositRefunded;
+  final String? exitNotes;
 
   Tenant({
     required this.id,
@@ -67,6 +70,9 @@ class Tenant {
     this.verificationNote,
     this.fcmToken,
     this.authUid,
+    this.exitDate,
+    this.depositRefunded,
+    this.exitNotes,
   });
 
   factory Tenant.fromMap(String id, Map<String, dynamic> map) {
@@ -89,6 +95,9 @@ class Tenant {
       verificationNote: map['verificationNote'] as String?,
       fcmToken: map['fcmToken'] as String?,
       authUid: map['authUid'] as String?,
+      exitDate: (map['exitDate'] as Timestamp?)?.toDate(),
+      depositRefunded: (map['depositRefunded'] as num?)?.toDouble(),
+      exitNotes: map['exitNotes'] as String?,
     );
   }
 
@@ -108,5 +117,8 @@ class Tenant {
         if (verificationNote != null) 'verificationNote': verificationNote,
         if (fcmToken != null) 'fcmToken': fcmToken,
         if (authUid != null) 'authUid': authUid,
+        if (exitDate != null) 'exitDate': Timestamp.fromDate(exitDate!),
+        if (depositRefunded != null) 'depositRefunded': depositRefunded,
+        if (exitNotes != null) 'exitNotes': exitNotes,
       };
 }

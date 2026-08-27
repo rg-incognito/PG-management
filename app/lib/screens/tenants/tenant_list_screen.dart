@@ -36,7 +36,16 @@ class _TenantListScreenState extends ConsumerState<TenantListScreen> {
     };
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Tenants')),
+      appBar: AppBar(
+        title: const Text('Tenants'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.history),
+            tooltip: 'Exited tenants',
+            onPressed: () => context.push('/tenants/exited', extra: widget.pgId),
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => context.push('/tenants/new', extra: widget.pgId),
         child: const Icon(Icons.add),

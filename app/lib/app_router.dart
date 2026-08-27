@@ -11,6 +11,7 @@ import 'screens/pgs/pg_management_screen.dart';
 import 'screens/rooms/rooms_screen.dart';
 import 'screens/settings/pg_settings_screen.dart';
 import 'screens/staff/staff_management_screen.dart';
+import 'screens/tenants/exited_tenants_screen.dart';
 import 'screens/tenants/payment_claims_screen.dart';
 import 'screens/tenants/tenant_form_screen.dart';
 import 'screens/tenants/tenant_list_screen.dart';
@@ -64,6 +65,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           pgId: state.extra as String,
           tenantId: state.pathParameters['id'],
         ),
+      ),
+      GoRoute(
+        path: '/tenants/exited',
+        builder: (_, state) => ExitedTenantsScreen(pgId: state.extra as String),
       ),
       GoRoute(
         path: '/claims',
