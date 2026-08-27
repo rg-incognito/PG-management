@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../services/providers.dart';
+import '../../widgets/confirm_sign_out.dart';
 
 class EmailVerificationScreen extends ConsumerStatefulWidget {
   final String email;
@@ -51,7 +52,11 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
-            onPressed: () => ref.read(authServiceProvider).signOut(),
+            onPressed: () async {
+              if (await confirmSignOut(context)) {
+                await ref.read(authServiceProvider).signOut();
+              }
+            },
           ),
         ],
       ),

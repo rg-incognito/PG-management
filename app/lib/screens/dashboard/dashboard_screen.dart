@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../models/payment.dart';
 import '../../services/providers.dart';
+import '../../widgets/confirm_sign_out.dart';
 
 String _currentMonthKey() {
   final now = DateTime.now();
@@ -35,7 +36,11 @@ class DashboardScreen extends ConsumerWidget {
           IconButton(
             icon: const Icon(Icons.logout),
             tooltip: 'Sign out',
-            onPressed: () => ref.read(authServiceProvider).signOut(),
+            onPressed: () async {
+              if (await confirmSignOut(context)) {
+                await ref.read(authServiceProvider).signOut();
+              }
+            },
           ),
         ],
       ),

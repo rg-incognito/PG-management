@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../models/payment.dart';
 import '../../models/tenant.dart';
 import '../../services/providers.dart';
+import '../../widgets/confirm_sign_out.dart';
 import '../profile/profile_screen.dart';
 import 'announcements_screen.dart';
 import 'upload_receipt_sheet.dart';
@@ -39,7 +40,11 @@ class HomeScreen extends ConsumerWidget {
           IconButton(
             icon: const Icon(Icons.logout),
             tooltip: 'Sign out',
-            onPressed: () => ref.read(authServiceProvider).signOut(),
+            onPressed: () async {
+              if (await confirmSignOut(context)) {
+                await ref.read(authServiceProvider).signOut();
+              }
+            },
           ),
         ],
       ),
