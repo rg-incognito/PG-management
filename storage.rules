@@ -16,14 +16,13 @@ service firebase.storage {
       return request.auth != null && request.auth.token.tenantId == tenantId;
     }
 
-    function isImageUnder10MB() {
-      return request.resource.size < 10 * 1024 * 1024
-        && request.resource.contentType.matches('image/.*');
-    }
-
-    function isDocUnder10MB() {
-      return request.resource.size < 10 * 1024 * 1024
-        && (request.resource.contentType.matches('image/.*') || request.resource.contentType == 'application/pdf');
+    // Size-only cap. An earlier version also required
+    // `contentType.matches('image/.*')`, but that check proved unreliable
+    // in practice (content-type isn't always what's expected depending on
+    // the picker/platform) and caused silent 403s for legitimate uploads —
+    // not worth it when staff visually review every one of these anyway.
+    function isUnder10MB() {
+      return request.resource.size < 10 * 1024 * 1024;
     }
 
     // /tenant_docs/{pgId}/{tenantId}/{fileName} — ID proofs, agreements,
@@ -33,7 +32,7 @@ service firebase.storage {
       allow read, write: if isStaff();
       allow write: if isOwnTenant(tenantId)
         && request.auth.token.email_verified == true
-        && isDocUnder10MB();
+        && isUnder10MB();
     }
 
     // /pg_qr/{pgId}/{fileName} — the PG's static UPI payment QR code image.
@@ -49,7 +48,7 @@ service firebase.storage {
     // back for review.
     match /payment_claim_receipts/{pgId}/{tenantId}/{fileName} {
       allow read: if isStaff();
-      allow write: if request.auth != null && isImageUnder10MB();
+      allow write: if request.auth != null && isUnder10MB();
     }
   }
 }
