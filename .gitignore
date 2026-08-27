@@ -13,6 +13,13 @@
 **/ios/Flutter/Flutter.framework
 **/ios/Flutter/Flutter.podspec
 
+# Release signing secrets — the keystore itself lives outside this repo
+# entirely (C:\Users\rohit\keystores\); this only guards against one ever
+# being placed inside it by accident.
+**/android/key.properties
+**/*.jks
+**/*.keystore
+
 # Cloud Functions
 functions/node_modules/
 
