@@ -61,7 +61,8 @@ class HomeScreen extends ConsumerWidget {
                 loading: () => const SizedBox.shrink(),
                 error: (_, _) => const SizedBox.shrink(),
                 data: (pg) {
-                  if (pg?.paymentQrUrl == null) return const SizedBox.shrink();
+                  final alreadyPaid = currentPayment?.status == PaymentStatus.paid;
+                  if (pg?.paymentQrUrl == null || alreadyPaid) return const SizedBox.shrink();
                   return Card(
                     child: Padding(
                       padding: const EdgeInsets.all(16),
