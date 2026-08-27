@@ -106,6 +106,11 @@ class FirestoreService {
     return ref.set(flat.toMap(), SetOptions(merge: true));
   }
 
+  /// Caller must first confirm the flat has no rooms — this doesn't cascade.
+  Future<void> deleteFlat(String flatId) {
+    return _db.collection('flats').doc(flatId).delete();
+  }
+
   // --- Rooms ---
   Stream<List<Room>> watchRooms(String pgId) {
     return _db
@@ -127,6 +132,18 @@ class FirestoreService {
   /// recreate the room instead if the sharing config genuinely changes.
   Future<void> renameRoom(String roomId, String roomNumber) {
     return _db.collection('rooms').doc(roomId).update({'roomNumber': roomNumber});
+  }
+
+  /// Deletes a room along with its bed docs. Caller must first confirm none
+  /// of the room's beds are occupied.
+  Future<void> deleteRoom(String roomId) async {
+    final bedsSnap = await _db.collection('beds').where('roomId', isEqualTo: roomId).get();
+    final batch = _db.batch();
+    for (final doc in bedsSnap.docs) {
+      batch.delete(doc.reference);
+    }
+    batch.delete(_db.collection('rooms').doc(roomId));
+    await batch.commit();
   }
 
   /// Creates a room under [flatId] with [roomType]'s capacity, and

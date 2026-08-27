@@ -191,6 +191,7 @@ class _FlatsAndRoomsTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final flatsAsync = ref.watch(flatsProvider(pgId));
     final roomsAsync = ref.watch(roomsProvider(pgId));
+    final bedsAsync = ref.watch(bedsProvider(pgId));
     final typesAsync = ref.watch(roomTypesProvider(pgId));
 
     return Scaffold(
@@ -206,6 +207,7 @@ class _FlatsAndRoomsTab extends ConsumerWidget {
             return const Center(child: Text('No flats yet. Add one, e.g. "A-101" (1BHK).'));
           }
           final rooms = roomsAsync.value ?? [];
+          final beds = bedsAsync.value ?? [];
           final types = typesAsync.value ?? [];
           return ListView(
             padding: const EdgeInsets.all(16),
@@ -215,13 +217,50 @@ class _FlatsAndRoomsTab extends ConsumerWidget {
                   child: ExpansionTile(
                     title: Text(flat.name),
                     subtitle: Text(flat.flatType),
+                    trailing: PopupMenuButton<String>(
+                      onSelected: (action) {
+                        if (action == 'edit') {
+                          _showFlatDialog(context, ref, pgId: pgId, existing: flat);
+                        } else if (action == 'delete') {
+                          _confirmDeleteFlat(
+                            context,
+                            ref,
+                            flat: flat,
+                            hasRooms: rooms.any((r) => r.flatId == flat.id),
+                          );
+                        }
+                      },
+                      itemBuilder: (context) => const [
+                        PopupMenuItem(value: 'edit', child: Text('Edit')),
+                        PopupMenuItem(value: 'delete', child: Text('Delete')),
+                      ],
+                    ),
                     children: [
                       for (final room in rooms.where((r) => r.flatId == flat.id))
                         ListTile(
                           title: Text('Room ${room.roomNumber}'),
                           subtitle: Text(_typeName(types, room.roomTypeId)),
-                          trailing: const Icon(Icons.edit),
                           onTap: () => _showRenameRoomDialog(context, ref, room: room),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.edit),
+                                tooltip: 'Rename',
+                                onPressed: () => _showRenameRoomDialog(context, ref, room: room),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.delete_outline),
+                                tooltip: 'Delete room',
+                                onPressed: () => _confirmDeleteRoom(
+                                  context,
+                                  ref,
+                                  room: room,
+                                  beds: beds.where((b) => b.roomId == room.id).toList(),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -254,14 +293,14 @@ class _FlatsAndRoomsTab extends ConsumerWidget {
   }
 }
 
-Future<void> _showFlatDialog(BuildContext context, WidgetRef ref, {required String pgId}) {
-  final nameController = TextEditingController();
-  final typeController = TextEditingController();
+Future<void> _showFlatDialog(BuildContext context, WidgetRef ref, {required String pgId, Flat? existing}) {
+  final nameController = TextEditingController(text: existing?.name ?? '');
+  final typeController = TextEditingController(text: existing?.flatType ?? '');
 
   return showDialog(
     context: context,
     builder: (context) => AlertDialog(
-      title: const Text('Add flat'),
+      title: Text(existing == null ? 'Add flat' : 'Edit flat'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -278,7 +317,7 @@ Future<void> _showFlatDialog(BuildContext context, WidgetRef ref, {required Stri
         FilledButton(
           onPressed: () async {
             final flat = Flat(
-              id: '',
+              id: existing?.id ?? '',
               pgId: pgId,
               name: nameController.text.trim(),
               flatType: typeController.text.trim(),
@@ -291,6 +330,70 @@ Future<void> _showFlatDialog(BuildContext context, WidgetRef ref, {required Stri
       ],
     ),
   );
+}
+
+Future<void> _confirmDeleteFlat(
+  BuildContext context,
+  WidgetRef ref, {
+  required Flat flat,
+  required bool hasRooms,
+}) async {
+  if (hasRooms) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Delete or move this flat\'s rooms first.')),
+    );
+    return;
+  }
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('Delete flat?'),
+      content: Text('This removes "${flat.name}" permanently.'),
+      actions: [
+        TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
+        FilledButton(
+          style: FilledButton.styleFrom(backgroundColor: Colors.red),
+          onPressed: () => Navigator.of(context).pop(true),
+          child: const Text('Delete'),
+        ),
+      ],
+    ),
+  );
+  if (confirmed == true) {
+    await ref.read(firestoreServiceProvider).deleteFlat(flat.id);
+  }
+}
+
+Future<void> _confirmDeleteRoom(
+  BuildContext context,
+  WidgetRef ref, {
+  required Room room,
+  required List<Bed> beds,
+}) async {
+  if (beds.any((b) => b.isOccupied)) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Move or check out occupants before deleting this room.')),
+    );
+    return;
+  }
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('Delete room?'),
+      content: Text('This removes room "${room.roomNumber}" and its ${beds.length} bed(s) permanently.'),
+      actions: [
+        TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
+        FilledButton(
+          style: FilledButton.styleFrom(backgroundColor: Colors.red),
+          onPressed: () => Navigator.of(context).pop(true),
+          child: const Text('Delete'),
+        ),
+      ],
+    ),
+  );
+  if (confirmed == true) {
+    await ref.read(firestoreServiceProvider).deleteRoom(room.id);
+  }
 }
 
 Future<void> _showAddRoomDialog(
