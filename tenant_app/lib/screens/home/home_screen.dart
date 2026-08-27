@@ -62,7 +62,13 @@ class HomeScreen extends ConsumerWidget {
         data: (payments) {
           final currentMonthMatches = payments.where((p) => p.month == month);
           final currentPayment = currentMonthMatches.isEmpty ? null : currentMonthMatches.first;
-          final history = payments.where((p) => p.month != month).toList();
+          // Past months always show here; the current month only joins once
+          // paid, so a tenant whose first-ever payment is this month still
+          // sees it as a record instead of an empty list (it's also shown
+          // separately, live, in the dues card above).
+          final history = payments
+              .where((p) => p.month != month || p.status == PaymentStatus.paid)
+              .toList();
 
           return ListView(
             padding: const EdgeInsets.all(16),
