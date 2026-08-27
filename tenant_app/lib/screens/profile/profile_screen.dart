@@ -46,6 +46,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             widget.tenant.id,
             TenantDocument(type: type, url: url, uploadedAt: DateTime.now()),
           );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Upload failed: $e')));
+      }
     } finally {
       if (mounted) setState(() => _uploading = false);
     }

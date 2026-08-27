@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/bed.dart';
+import '../models/broadcast.dart';
 import '../models/flat.dart';
 import '../models/payment.dart';
 import '../models/payment_claim.dart';
@@ -285,5 +286,21 @@ class FirestoreService {
 
   Future<void> saveSettings(PgSettings settings) {
     return _db.collection('settings').doc(settings.pgId).set(settings.toMap(), SetOptions(merge: true));
+  }
+
+  // --- Broadcasts ---
+  Stream<List<Broadcast>> watchBroadcasts(String pgId) {
+    return _db
+        .collection('broadcasts')
+        .where('pgId', isEqualTo: pgId)
+        .orderBy('sentAt', descending: true)
+        .limit(50)
+        .snapshots()
+        .map((s) => s.docs.map((d) => Broadcast.fromMap(d.id, d.data())).toList());
+  }
+
+  Future<void> sendBroadcast({required String pgId, required String title, required String message, required String sentByUid}) {
+    final broadcast = Broadcast(id: '', pgId: pgId, title: title, message: message, sentBy: sentByUid);
+    return _db.collection('broadcasts').add(broadcast.toMap());
   }
 }

@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../models/broadcast.dart';
 import '../models/payment.dart';
 import '../models/pg.dart';
 import '../models/tenant.dart';
@@ -50,6 +51,16 @@ class FirestoreService {
         .orderBy('month', descending: true)
         .snapshots()
         .map((s) => s.docs.map((d) => Payment.fromMap(d.id, d.data())).toList());
+  }
+
+  Stream<List<Broadcast>> watchBroadcasts(String pgId) {
+    return _db
+        .collection('broadcasts')
+        .where('pgId', isEqualTo: pgId)
+        .orderBy('sentAt', descending: true)
+        .limit(20)
+        .snapshots()
+        .map((s) => s.docs.map((d) => Broadcast.fromMap(d.id, d.data())).toList());
   }
 
   Future<void> submitPaymentClaim({

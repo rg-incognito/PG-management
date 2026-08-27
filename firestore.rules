@@ -32,6 +32,15 @@ service cloud.firestore {
       return isSignedIn() && tenantData.authUid == request.auth.uid;
     }
 
+    // True if the caller's tenant login (via the `tenantId` custom claim
+    // set by provisionTenantLogin) belongs to this pgId — lets a tenant
+    // read broadcasts for their own PG without a staff-level grant.
+    function isTenantOfPg(pgId) {
+      return isSignedIn()
+        && request.auth.token.tenantId != null
+        && get(/databases/$(database)/documents/tenants/$(request.auth.token.tenantId)).data.pgId == pgId;
+    }
+
     // /staff/{staffId} — a staff member can read their own record and
     // update their own fcmTokens (for push registration); only owners can
     // otherwise manage staff accounts and PG assignments.
@@ -129,6 +138,14 @@ service cloud.firestore {
         && isLinkedTenant(get(/databases/$(database)/documents/tenants/$(request.resource.data.tenantId)).data)
         && request.resource.data.pgId ==
            get(/databases/$(database)/documents/tenants/$(request.resource.data.tenantId)).data.pgId;
+    }
+
+    // /broadcasts/{broadcastId} — an announcement the owner/staff sends to
+    // every tenant in a PG. Staff manage; any tenant of that PG can read.
+    match /broadcasts/{broadcastId} {
+      allow get, list: if hasPgAccess(resource.data.pgId) || isTenantOfPg(resource.data.pgId);
+      allow create: if hasPgAccess(request.resource.data.pgId)
+        && request.resource.data.sentBy == request.auth.uid;
     }
   }
 }

@@ -326,3 +326,21 @@ exports.sendPendingReminders = onCall(async (request) => {
 
   return { notified, month };
 });
+
+// Fires when the owner sends an announcement. Pushes it to every active
+// tenant in that PG.
+exports.onBroadcastCreated = onDocumentCreated("broadcasts/{broadcastId}", async (event) => {
+  const broadcast = event.data.data();
+
+  const tenantsSnap = await db
+    .collection("tenants")
+    .where("pgId", "==", broadcast.pgId)
+    .where("status", "==", "active")
+    .get();
+
+  const tokens = tenantsSnap.docs.map((d) => d.get("fcmToken")).filter(Boolean);
+  await sendToTokens(tokens, broadcast.title, broadcast.message, {
+    type: "broadcast",
+    broadcastId: event.params.broadcastId,
+  });
+});

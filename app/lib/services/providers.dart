@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 
 import '../models/bed.dart';
+import '../models/broadcast.dart';
 import '../models/flat.dart';
 import '../models/payment_claim.dart';
 import '../models/pg.dart';
@@ -69,6 +70,10 @@ final flatsProvider = StreamProvider.family<List<Flat>, String>((ref, pgId) {
 
 final bedsProvider = StreamProvider.family<List<Bed>, String>((ref, pgId) {
   return ref.watch(firestoreServiceProvider).watchBeds(pgId);
+});
+
+final broadcastsProvider = StreamProvider.family<List<Broadcast>, String>((ref, pgId) {
+  return ref.watch(firestoreServiceProvider).watchBroadcasts(pgId);
 });
 
 /// Forces a fresh ID token once per sign-in so a `staff` custom claim set

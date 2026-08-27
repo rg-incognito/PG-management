@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'screens/auth/login_screen.dart';
+import 'screens/broadcasts/broadcasts_screen.dart';
 import 'screens/dashboard/dashboard_screen.dart';
 import 'screens/rooms/rooms_screen.dart';
 import 'screens/settings/pg_settings_screen.dart';
@@ -77,6 +78,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/verification',
         builder: (_, state) => TenantVerificationScreen(pgId: state.extra as String),
+      ),
+      GoRoute(
+        path: '/broadcasts',
+        builder: (_, state) => BroadcastsScreen(pgId: state.extra as String),
       ),
     ],
   );

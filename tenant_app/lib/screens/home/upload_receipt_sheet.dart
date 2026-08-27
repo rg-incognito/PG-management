@@ -51,7 +51,7 @@ class _UploadReceiptSheetState extends ConsumerState<UploadReceiptSheet> {
           );
       if (mounted) Navigator.of(context).pop();
     } catch (e) {
-      setState(() => _error = 'Upload failed, please try again');
+      setState(() => _error = 'Upload failed: $e');
     } finally {
       if (mounted) setState(() => _submitting = false);
     }

@@ -74,6 +74,14 @@
         { "fieldPath": "status", "order": "ASCENDING" },
         { "fieldPath": "submittedAt", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "broadcasts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "pgId", "order": "ASCENDING" },
+        { "fieldPath": "sentAt", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

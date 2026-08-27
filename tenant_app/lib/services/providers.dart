@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../models/broadcast.dart';
 import '../models/payment.dart';
 import '../models/pg.dart';
 import '../models/tenant.dart';
@@ -50,4 +51,8 @@ final pgProvider = StreamProvider.family<Pg?, String>((ref, pgId) {
 /// updates in real time, unlike the one-shot linkedTenantProvider lookup).
 final tenantStreamProvider = StreamProvider.family<Tenant?, String>((ref, tenantId) {
   return ref.watch(firestoreServiceProvider).watchTenant(tenantId);
+});
+
+final broadcastsProvider = StreamProvider.family<List<Broadcast>, String>((ref, pgId) {
+  return ref.watch(firestoreServiceProvider).watchBroadcasts(pgId);
 });

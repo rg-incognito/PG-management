@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../models/broadcast.dart';
 import '../../models/payment.dart';
 import '../../models/tenant.dart';
 import '../../services/providers.dart';
@@ -53,6 +54,8 @@ class HomeScreen extends ConsumerWidget {
             padding: const EdgeInsets.all(16),
             children: [
               _DuesCard(rentAmount: tenant.rentAmount, payment: currentPayment),
+              const SizedBox(height: 16),
+              _AnnouncementsSection(pgId: tenant.pgId),
               const SizedBox(height: 16),
               pgAsync.when(
                 loading: () => const SizedBox.shrink(),
@@ -133,6 +136,55 @@ class _DuesCard extends StatelessWidget {
             ),
             if ((payment?.penaltyApplied ?? 0) > 0)
               Text('+ ₹${payment!.penaltyApplied} penalty', style: const TextStyle(color: Colors.red)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AnnouncementsSection extends ConsumerWidget {
+  final String pgId;
+  const _AnnouncementsSection({required this.pgId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final broadcastsAsync = ref.watch(broadcastsProvider(pgId));
+    final broadcasts = (broadcastsAsync.value ?? const <Broadcast>[]).take(5).toList();
+    if (broadcasts.isEmpty) return const SizedBox.shrink();
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: const [
+                Icon(Icons.campaign, size: 20),
+                SizedBox(width: 8),
+                Text('Announcements', style: TextStyle(fontWeight: FontWeight.bold)),
+              ],
+            ),
+            const SizedBox(height: 8),
+            for (var i = 0; i < broadcasts.length; i++) ...[
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(broadcasts[i].title, style: const TextStyle(fontWeight: FontWeight.w600)),
+                    Text(broadcasts[i].message),
+                    if (broadcasts[i].sentAt != null)
+                      Text(
+                        DateFormat.MMMd().add_jm().format(broadcasts[i].sentAt!),
+                        style: const TextStyle(fontSize: 11, color: Colors.grey),
+                      ),
+                  ],
+                ),
+              ),
+              if (i < broadcasts.length - 1) const Divider(height: 1),
+            ],
           ],
         ),
       ),

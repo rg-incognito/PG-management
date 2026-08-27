@@ -2,9 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../models/payment.dart';
 import '../../models/tenant.dart';
 import '../../services/providers.dart';
 import 'mark_paid_dialog.dart';
+
+String _currentMonthKey() {
+  final now = DateTime.now();
+  return '${now.year}-${now.month.toString().padLeft(2, '0')}';
+}
+
+final _paymentsThisMonthProvider = StreamProvider.family((ref, String pgId) {
+  return ref.watch(firestoreServiceProvider).watchPaymentsForPgAndMonth(pgId, _currentMonthKey());
+});
 
 class TenantListScreen extends ConsumerStatefulWidget {
   final String pgId;
@@ -20,6 +30,10 @@ class _TenantListScreenState extends ConsumerState<TenantListScreen> {
   @override
   Widget build(BuildContext context) {
     final tenantsAsync = ref.watch(tenantsProvider(widget.pgId));
+    final paymentsAsync = ref.watch(_paymentsThisMonthProvider(widget.pgId));
+    final paymentsByTenant = <String, Payment>{
+      for (final p in paymentsAsync.value ?? const <Payment>[]) p.tenantId: p,
+    };
 
     return Scaffold(
       appBar: AppBar(title: const Text('Tenants')),
@@ -59,7 +73,11 @@ class _TenantListScreenState extends ConsumerState<TenantListScreen> {
                 return ListView.separated(
                   itemCount: filtered.length,
                   separatorBuilder: (_, _) => const Divider(height: 1),
-                  itemBuilder: (context, i) => _TenantTile(tenant: filtered[i], pgId: widget.pgId),
+                  itemBuilder: (context, i) => _TenantTile(
+                    tenant: filtered[i],
+                    pgId: widget.pgId,
+                    payment: paymentsByTenant[filtered[i].id],
+                  ),
                 );
               },
             ),
@@ -73,21 +91,30 @@ class _TenantListScreenState extends ConsumerState<TenantListScreen> {
 class _TenantTile extends StatelessWidget {
   final Tenant tenant;
   final String pgId;
-  const _TenantTile({required this.tenant, required this.pgId});
+  final Payment? payment;
+  const _TenantTile({required this.tenant, required this.pgId, this.payment});
 
   @override
   Widget build(BuildContext context) {
+    final isPaid = payment?.status == PaymentStatus.paid;
+
     return ListTile(
       leading: CircleAvatar(child: Text(tenant.name.isNotEmpty ? tenant.name[0].toUpperCase() : '?')),
       title: Text(tenant.name),
       subtitle: Text('${tenant.mobile} · ₹${tenant.rentAmount.toStringAsFixed(0)}/mo'),
-      trailing: TextButton(
-        child: const Text('Mark paid'),
-        onPressed: () => showDialog(
-          context: context,
-          builder: (_) => MarkPaidDialog(tenant: tenant, pgId: pgId),
-        ),
-      ),
+      trailing: isPaid
+          ? const Chip(
+              avatar: Icon(Icons.check_circle, color: Colors.green, size: 18),
+              label: Text('Paid'),
+              visualDensity: VisualDensity.compact,
+            )
+          : TextButton(
+              child: const Text('Mark paid'),
+              onPressed: () => showDialog(
+                context: context,
+                builder: (_) => MarkPaidDialog(tenant: tenant, pgId: pgId),
+              ),
+            ),
       onTap: () => context.push('/tenants/${tenant.id}/edit', extra: pgId),
     );
   }

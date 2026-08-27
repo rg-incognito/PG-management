@@ -7,7 +7,7 @@ class StorageService {
 
   Future<String> uploadPgQr(String pgId, File file) async {
     final ref = _storage.ref('pg_qr/$pgId/qr.jpg');
-    await ref.putFile(file);
+    await ref.putFile(file, SettableMetadata(contentType: 'image/jpeg'));
     return ref.getDownloadURL();
   }
 }
