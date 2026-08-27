@@ -67,10 +67,15 @@ class FirestoreService {
         .map((s) => s.docs.map((d) => Payment.fromMap(d.id, d.data())).toList());
   }
 
+  // Announcements are a notice board, not an archive — only show the last
+  // 24 hours' worth. Drives both the Announcements list and the unread
+  // badge on Home, so an old one stops counting too, not just displaying.
   Stream<List<Broadcast>> watchBroadcasts(String pgId) {
+    final cutoff = Timestamp.fromDate(DateTime.now().subtract(const Duration(days: 1)));
     return _db
         .collection('broadcasts')
         .where('pgId', isEqualTo: pgId)
+        .where('sentAt', isGreaterThan: cutoff)
         .orderBy('sentAt', descending: true)
         .limit(20)
         .snapshots()

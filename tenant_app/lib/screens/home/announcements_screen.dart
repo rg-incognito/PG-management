@@ -37,7 +37,7 @@ class _AnnouncementsScreenState extends ConsumerState<AnnouncementsScreen> {
         error: (e, _) => Center(child: Text('Failed to load: $e')),
         data: (broadcasts) {
           if (broadcasts.isEmpty) {
-            return const Center(child: Text('No announcements yet.'));
+            return const Center(child: Text('No announcements in the last 24 hours.'));
           }
           final unread = broadcasts
               .where((b) => lastSeen == null || (b.sentAt?.isAfter(lastSeen) ?? false))
